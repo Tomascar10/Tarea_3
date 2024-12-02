@@ -1755,7 +1755,7 @@ main(int argc, char *argv[])
     exit();
   }
   close(open("usertests.ran", O_CREATE));
-  test_message_queue()
+  mprotect_test();
 
   argptest();
   createdelete();
@@ -1804,25 +1804,25 @@ main(int argc, char *argv[])
   exit();
 }
 
-void test_message_queue() {
-    if (fork() == 0) {
-        // Proceso lector
-        char msg[128];
-        while (1) {
-            int sender_pid = receive(msg);
-            printf("Mensaje recibido de %d: %s\n", sender_pid, msg);
-        }
-        exit();
-    } else {
-        // Proceso escritor
-        for (int i = 0; i < 10; i++) {
-            char msg[128];
-            snprintf(msg, sizeof(msg), "Mensaje %d", i);
-            if (send(getpid(), msg) == 0) {
-                printf("Mensaje %d enviado.\n", i);
-            }
-        }
-        wait();
-    }
+void mprotect_test(void) {
+    char *mem = sbrk(PGSIZE);
+    printf(1, "Testing mprotect...\n");
+    if (mprotect(mem, 1) < 0)
+        printf(1, "mprotect failed\n");
+    else
+        printf(1, "mprotect succeeded\n");
+
+    printf(1, "Testing write after mprotect (should fail)...\n");
+    *mem = 'A'; // Debería causar un error de protección de memoria
+
+    printf(1, "Testing munprotect...\n");
+    if (munprotect(mem, 1) < 0)
+        printf(1, "munprotect failed\n");
+    else
+        printf(1, "munprotect succeeded\n");
+
+    printf(1, "Testing write after munprotect (should succeed)...\n");
+    *mem = 'A'; // Debería funcionar
 }
+
 

@@ -384,6 +384,39 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
   }
   return 0;
 }
+int mprotect(void *addr, int len) {
+    if ((uint)addr % PGSIZE != 0 || len <= 0) {
+        return -1; // Dirección no alineada o longitud inválida
+    }
+
+    pte_t *pte;
+    for (int i = 0; i < len; i += PGSIZE) {
+        pte = walkpgdir(proc->pgdir, addr + i, 0); // Obtener PTE de la página
+        if (!pte || !(*pte & PTE_P)) {
+            return -1; // Página no válida
+        }
+        *pte &= ~PTE_W; // Deshabilitar escritura
+    }
+
+    return 0; // Éxito
+}
+int munprotect(void *addr, int len) {
+    if ((uint)addr % PGSIZE != 0 || len <= 0) {
+        return -1; // Dirección no alineada o longitud inválida
+    }
+
+    pte_t *pte;
+    for (int i = 0; i < len; i += PGSIZE) {
+        pte = walkpgdir(proc->pgdir, addr + i, 0); // Obtener PTE de la página
+        if (!pte || !(*pte & PTE_P)) {
+            return -1; // Página no válida
+        }
+        *pte |= PTE_W; // Habilitar escritura
+    }
+
+    return 0; // Éxito
+}
+
 
 //PAGEBREAK!
 // Blank page.

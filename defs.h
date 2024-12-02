@@ -154,6 +154,8 @@ int             argptr(int, char**, int);
 int             argstr(int, char**);
 int             fetchint(uint, int*);
 int             fetchstr(uint, char**);
+int             mprotect(void *addr, int len);
+int             munprotect(void *addr, int len);
 void            syscall(void);
 
 // timer.c
@@ -184,6 +186,8 @@ pde_t*          copyuvm(pde_t*, uint);
 void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
+int             mprotect(void *addr, int len);
+int             munprotect(void *addr, int len);
 void            clearpteu(pde_t *pgdir, char *uva);
 
 // number of elements in fixed-size array
