@@ -1,51 +1,36 @@
-NOTE: we have stopped maintaining the x86 version of xv6, and switched
-our efforts to the RISC-V version
-(https://github.com/mit-pdos/xv6-riscv.git)
+Protección de Memoria en xv6
 
-xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
-Version 6 (v6).  xv6 loosely follows the structure and style of v6,
-but is implemented for a modern x86-based multiprocessor using ANSI C.
+Introducción
 
-ACKNOWLEDGMENTS
+Este proyecto extiende el sistema operativo xv6 para implementar protección de memoria. Se agregaron dos llamadas al sistema, mprotect y munprotect, que permiten marcar y desmarcar una región de memoria como solo lectura.
 
-xv6 is inspired by John Lions's Commentary on UNIX 6th Edition (Peer
-to Peer Communications; ISBN: 1-57398-013-7; 1st edition (June 14,
-2000)). See also https://pdos.csail.mit.edu/6.828/, which
-provides pointers to on-line resources for v6.
+Funcionamiento y Lógica de la Protección de Memoria
 
-xv6 borrows code from the following sources:
-    JOS (asm.h, elf.h, mmu.h, bootasm.S, ide.c, console.c, and others)
-    Plan 9 (entryother.S, mp.h, mp.c, lapic.c)
-    FreeBSD (ioapic.c)
-    NetBSD (console.c)
+Funciones Implementadas
+mprotect(void *addr, int len):
+Marca una región de memoria como solo lectura, comenzando en la dirección addr y con longitud len.
+Calcula cuántas páginas están involucradas y modifica el bit W de cada entrada en la tabla de páginas (PTE) para deshabilitar la escritura.
+munprotect(void *addr, int len):
+Restaura el permiso de escritura en una región de memoria previamente protegida por mprotect.
+Similar a mprotect, esta función calcula las páginas afectadas y vuelve a activar el bit W de cada PTE para permitir escritura.
+Manejo de Errores
+Las funciones mprotect y munprotect manejan errores para asegurar la robustez de la protección de memoria:
 
-The following people have made contributions: Russ Cox (context switching,
-locking), Cliff Frey (MP), Xiao Yu (MP), Nickolai Zeldovich, and Austin
-Clements.
+Verifican que addr y len sean válidos y estén alineados con el tamaño de página.
+Aseguran que las direcciones proporcionadas pertenecen al proceso actual.
+Devuelven un error si algún parámetro es inválido o si la región de memoria no puede ser protegida/desprotegida.
+Explicación de las Modificaciones Realizadas
 
-We are also grateful for the bug reports and patches contributed by Silas
-Boyd-Wickizer, Anton Burtsev, Cody Cutler, Mike CAT, Tej Chajed, eyalz800,
-Nelson Elhage, Saar Ettinger, Alice Ferrazzi, Nathaniel Filardo, Peter
-Froehlich, Yakir Goaron,Shivam Handa, Bryan Henry, Jim Huang, Alexander
-Kapshuk, Anders Kaseorg, kehao95, Wolfgang Keller, Eddie Kohler, Austin
-Liew, Imbar Marinescu, Yandong Mao, Matan Shabtay, Hitoshi Mitake, Carmi
-Merimovich, Mark Morrissey, mtasm, Joel Nider, Greg Price, Ayan Shafqat,
-Eldar Sehayek, Yongming Shen, Cam Tenny, tyfkda, Rafael Ubal, Warren
-Toomey, Stephen Tu, Pablo Ventura, Xi Wang, Keiichi Watanabe, Nicolas
-Wolovick, wxdao, Grant Wu, Jindong Zhang, Icenowy Zheng, and Zou Chang Wei.
+Archivos Modificados
+syscall.h: Se añadieron las definiciones de SYS_mprotect y SYS_munprotect.
+syscall.c: Se registraron las funciones sys_mprotect y sys_munprotect en la tabla de llamadas al sistema.
+user.h: Se declararon las funciones mprotect y munprotect para que estén disponibles en el espacio de usuario.
+sysproc.c: Implementación de sys_mprotect y sys_munprotect, que validan los parámetros y llaman a las funciones internas.
+vm.c: Lógica principal de mprotect y munprotect, que manipulan el bit de escritura en las entradas de la tabla de páginas.
+defs.h: Se declararon las funciones mprotect y munprotect para uso en el kernel.
 
-The code in the files that constitute xv6 is
-Copyright 2006-2018 Frans Kaashoek, Robert Morris, and Russ Cox.
+Dificultades y Soluciones Implementadas
 
-ERROR REPORTS
-
-We don't process error reports (see note on top of this file).
-
-BUILDING AND RUNNING XV6
-
-To build xv6 on an x86 ELF machine (like Linux or FreeBSD), run
-"make". On non-x86 or non-ELF machines (like OS X, even on x86), you
-will need to install a cross-compiler gcc suite capable of producing
-x86 ELF binaries (see https://pdos.csail.mit.edu/6.828/).
-Then run "make TOOLPREFIX=i386-jos-elf-". Now install the QEMU PC
-simulator and run "make qemu".
+Manejo de PTEs: Asegurarse de modificar correctamente el bit W en cada entrada de la tabla de páginas fue un desafío. Esto se solucionó con validaciones cuidadosas y usando walkpgdir para acceder a las PTEs.
+Manejo de errores: Se implementaron verificaciones para garantizar que los parámetros de addr y len fueran válidos y alineados con el tamaño de página.
+Actualización del TLB: Para asegurar que los cambios en los permisos de las páginas fueran efectivos, se recargó el registro CR3 después de modificar las PTEs.
