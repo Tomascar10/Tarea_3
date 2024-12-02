@@ -1755,6 +1755,7 @@ main(int argc, char *argv[])
     exit();
   }
   close(open("usertests.ran", O_CREATE));
+  test_message_queue()
 
   argptest();
   createdelete();
@@ -1784,6 +1785,7 @@ main(int argc, char *argv[])
   preempt();
   exitwait();
 
+
   rmdot();
   fourteen();
   bigfile();
@@ -1801,3 +1803,26 @@ main(int argc, char *argv[])
 
   exit();
 }
+
+void test_message_queue() {
+    if (fork() == 0) {
+        // Proceso lector
+        char msg[128];
+        while (1) {
+            int sender_pid = receive(msg);
+            printf("Mensaje recibido de %d: %s\n", sender_pid, msg);
+        }
+        exit();
+    } else {
+        // Proceso escritor
+        for (int i = 0; i < 10; i++) {
+            char msg[128];
+            snprintf(msg, sizeof(msg), "Mensaje %d", i);
+            if (send(getpid(), msg) == 0) {
+                printf("Mensaje %d enviado.\n", i);
+            }
+        }
+        wait();
+    }
+}
+

@@ -35,6 +35,7 @@ main(void)
   kinit2(P2V(4*1024*1024), P2V(PHYSTOP)); // must come after startothers()
   userinit();      // first user process
   mpmain();        // finish this processor's setup
+  init_message_queue();
 }
 
 // Other CPUs jump here from entryother.S.
@@ -113,4 +114,12 @@ pde_t entrypgdir[NPDENTRIES] = {
 // Blank page.
 //PAGEBREAK!
 // Blank page.
+
+void init_message_queue(void) {
+    initlock(&msg_queue.lock, "msg_queue");
+    msg_queue.head = 0;
+    msg_queue.tail = 0;
+    msg_queue.count = 0;
+}
+
 

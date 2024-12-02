@@ -89,6 +89,10 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
 
+  // Inicializar prioridad y boost
+  p->priority = 0;  // Prioridad inicial en 0
+  p->boost = 1;     // Boost inicial en 1
+
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -114,6 +118,7 @@ found:
 
   return p;
 }
+
 
 //PAGEBREAK: 32
 // Set up first user process.
@@ -532,3 +537,16 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+#define MSG_QUEUE_SIZE 32
+
+typedef struct message_queue {
+    message messages[MSG_QUEUE_SIZE];
+    int head;  // Índice de lectura
+    int tail;  // Índice de escritura
+    int count; // Número de mensajes en la cola
+    struct spinlock lock;
+} message_queue;
+
+message_queue msg_queue;
+
